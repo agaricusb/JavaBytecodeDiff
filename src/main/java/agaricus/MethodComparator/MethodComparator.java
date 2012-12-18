@@ -5,12 +5,10 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 //import org.objectweb.asm.*;
 
@@ -22,12 +20,12 @@ public class MethodComparator
      * @param packagePrefix Prefix to match for classes to read (all others ignored)
      * @return Map of class name String to ClassNode
      */
-    public static Map<String,ClassNode> getClassNodes(String jarFilename, String packagePrefix) throws IOException
+    public static Map<String,LinkedHashMap<String, MethodNode>> getClasses(String jarFilename, String packagePrefix) throws IOException
     {
         JarFile jarFile = new JarFile(jarFilename);
         Enumeration<JarEntry> entries = jarFile.entries();
 
-        Map<String,ClassNode> classes = new HashMap<String,ClassNode>();
+        Map<String,LinkedHashMap<String, MethodNode>> classes = new HashMap<String,LinkedHashMap<String, MethodNode>>();
 
         while(entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
@@ -44,7 +42,22 @@ public class MethodComparator
 
             classReader.accept(classNode, 0);
 
-            classes.put(className, classNode);
+            // Ordered list of methods
+            LinkedHashMap<String, MethodNode> methods = new LinkedHashMap<String, MethodNode>();
+
+            for (MethodNode methodNode: (List<MethodNode>)classNode.methods) {
+                // Key on the method name, space, and the descriptor (Java type string, like: ()Z)
+                // Not using methodNode.signature since it seems to always be null
+                String key = methodNode.name + " " + methodNode.desc;
+
+                // Remove package for comparison purposes, otherwise will detect
+                // net/minecraft/server -> net/minecraft/server/v1_4_5 differences in all methods
+                key = key.replace(packagePrefix, "");
+
+                methods.put(key, methodNode);
+            }
+
+            classes.put(className, methods);
         }
 
         return classes;
@@ -69,21 +82,27 @@ public class MethodComparator
      * @param cs1 Set of classes to compare
      * @param cs2 Set of classes to compare with (extra classes are ignored)
      */
-    public static void compare(Map<String,ClassNode> cs1, Map<String,ClassNode> cs2)
+    public static void compare(Map<String,LinkedHashMap<String, MethodNode>> cs1, Map<String,LinkedHashMap<String, MethodNode>> cs2)
     {
-        for (Map.Entry<String, ClassNode> entry1 : cs1.entrySet()) {
+        for (Map.Entry<String, LinkedHashMap<String, MethodNode>> entry1 : cs1.entrySet()) {
             String className = entry1.getKey();
-            ClassNode class1 = entry1.getValue();
-            ClassNode class2 = cs2.get(className);
+            LinkedHashMap<String, MethodNode> methods1 = entry1.getValue();
+            LinkedHashMap<String, MethodNode> methods2 = cs2.get(className);
 
-            if (class1.methods.size() != class2.methods.size())
-                System.out.println(className + " " + class1.methods.size() + " / " + class2.methods.size());
+            Set<String> removed = setDifference(methods1.keySet(), methods2.keySet());
+            Set<String> added = setDifference(methods2.keySet(), methods1.keySet());
 
-            /*
-            for (MethodNode methodNode: (List<MethodNode>)class1.methods) {
-                System.out.println("\t "+methodNode.name+" "+methodNode.desc);
+            if (!removed.isEmpty() || !added.isEmpty()) {
+                for (String remove: removed) {
+                    System.out.println("MD:REM: " + className + " " + remove);
+                }
+                for (String add: added) {
+                    System.out.println("MD:ADD: " + className + " " + add);
+                }
             }
-            */
+
+            // TODO: detect changed methods
+            System.out.println("");
         }
     }
 
@@ -92,19 +111,28 @@ public class MethodComparator
         String filename1 = "/tmp/minecraft-server-1.4.5.jar";
         String filename2 = "/tmp/craftbukkit-1.4.5-R0.3-2536.jar";
 
-        Map<String,ClassNode> cs1 = getClassNodes(filename1, "net/minecraft/server/");
-        Map<String,ClassNode> cs2 = getClassNodes(filename2, "net/minecraft/server/v1_4_5/");
+        String prefix1 = "net/minecraft/server/";
+        String prefix2 = "net/minecraft/server/v1_4_5/";
+
+        Map<String,LinkedHashMap<String,MethodNode>> cs1 = getClasses(filename1, prefix1);
+        Map<String,LinkedHashMap<String,MethodNode>> cs2 = getClasses(filename2, prefix2);
 
         System.out.println(cs1.size() + " / " + cs2.size());
 
         Set<String> missing = setDifference(cs1.keySet(), cs2.keySet());
+        for (String m: missing) {
+            System.out.println("CL:REM: " + m);
+        }
+
         if (!missing.isEmpty()) {
             System.out.println("Missing classes! " + filename1 + " - " + filename2 + " = " + missing);
             return;
         }
 
         Set<String> surplus = setDifference(cs2.keySet(), cs1.keySet());
-        System.out.println("Classes added (" + surplus.size() + "): " + surplus);
+        for (String s: surplus) {
+            System.out.println("CL:ADD: " + s);
+        }
 
         compare(cs1, cs2);
 
