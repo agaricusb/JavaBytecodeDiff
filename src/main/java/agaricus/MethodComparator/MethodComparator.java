@@ -2,6 +2,7 @@ package agaricus.MethodComparator;
 
 import org.apache.commons.io.FilenameUtils;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -20,12 +21,12 @@ public class MethodComparator
      * @param packagePrefix Prefix to match for classes to read (all others ignored)
      * @return Map of class name String to ClassNode
      */
-    public static Map<String,LinkedHashMap<String, MethodNode>> getClasses(String jarFilename, String packagePrefix) throws IOException
+    public static LinkedHashMap<String,LinkedHashMap<String, MethodNode>> getClasses(String jarFilename, String packagePrefix) throws IOException
     {
         JarFile jarFile = new JarFile(jarFilename);
         Enumeration<JarEntry> entries = jarFile.entries();
 
-        Map<String,LinkedHashMap<String, MethodNode>> classes = new HashMap<String,LinkedHashMap<String, MethodNode>>();
+        LinkedHashMap<String,LinkedHashMap<String, MethodNode>> classes = new LinkedHashMap<String, LinkedHashMap<String, MethodNode>>();
 
         while(entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
@@ -55,6 +56,8 @@ public class MethodComparator
                 key = key.replace(packagePrefix, "");
 
                 methods.put(key, methodNode);
+
+                // TODO: store fields, so can detect private -> public access modifiers, and type changes
             }
 
             classes.put(className, methods);
@@ -78,11 +81,24 @@ public class MethodComparator
     }
 
     /**
+     * Compute set intersection
+     * @param s1
+     * @param s2
+     * @param <T>
+     * @return s1 & s2
+     */
+    public static <T> Set<T> setIntersection(Set<T> s1, Set<T> s2) {
+        Set<T> intersection = new HashSet<T>(s1);
+        intersection.retainAll(s2);
+        return intersection;
+    }
+
+    /**
      * Compare classes in cs1 with classes in cs2
      * @param cs1 Set of classes to compare
      * @param cs2 Set of classes to compare with (extra classes are ignored)
      */
-    public static void compare(Map<String,LinkedHashMap<String, MethodNode>> cs1, Map<String,LinkedHashMap<String, MethodNode>> cs2)
+    public static void compareClasses(Map<String, LinkedHashMap<String, MethodNode>> cs1, Map<String, LinkedHashMap<String, MethodNode>> cs2)
     {
         for (Map.Entry<String, LinkedHashMap<String, MethodNode>> entry1 : cs1.entrySet()) {
             String className = entry1.getKey();
@@ -92,13 +108,24 @@ public class MethodComparator
             Set<String> removed = setDifference(methods1.keySet(), methods2.keySet());
             Set<String> added = setDifference(methods2.keySet(), methods1.keySet());
 
+            // Added/removed methods
             if (!removed.isEmpty() || !added.isEmpty()) {
                 for (String remove: removed) {
                     System.out.println("MD:REM: " + className + " " + remove);
+                    // TODO: detect signature changes - same name, position, different descriptor? heuristic? if removed try to find..
+                    // Few methods if any methods are actually removed!
                 }
                 for (String add: added) {
                     System.out.println("MD:ADD: " + className + " " + add);
                 }
+            }
+            // TODO: detect access changes - .access bit field (e.g. private -> public)
+
+            for (String methodName: setIntersection(methods1.keySet(), methods2.keySet())) {
+                MethodNode m1 = methods1.get(methodName);
+                MethodNode m2 = methods2.get(methodName);
+
+                compareMethods(className, m1, m2);
             }
 
             // TODO: detect changed methods
@@ -106,7 +133,14 @@ public class MethodComparator
         }
     }
 
-    public static void main(String args[]) throws IOException
+    public static void compareMethods(String className, MethodNode m1, MethodNode m2) {
+        AbstractInsnNode inst1 = m1.instructions.getFirst();
+        AbstractInsnNode inst2 = m2.instructions.getFirst();
+
+        System.out.println("MD:???: " + className + " " + m1.name + " = " + inst1.equals(inst2) + " . " + inst1.getType() + "," + inst2.getType() + " ?? " + inst1.hashCode() + "/" + inst2.hashCode());
+    }
+
+    public static void main(String[] args) throws IOException
     {
         String filename1 = "/tmp/minecraft-server-1.4.5.jar";
         String filename2 = "/tmp/craftbukkit-1.4.5-R0.3-2536.jar";
@@ -114,8 +148,8 @@ public class MethodComparator
         String prefix1 = "net/minecraft/server/";
         String prefix2 = "net/minecraft/server/v1_4_5/";
 
-        Map<String,LinkedHashMap<String,MethodNode>> cs1 = getClasses(filename1, prefix1);
-        Map<String,LinkedHashMap<String,MethodNode>> cs2 = getClasses(filename2, prefix2);
+        LinkedHashMap<String,LinkedHashMap<String,MethodNode>> cs1 = getClasses(filename1, prefix1);
+        LinkedHashMap<String,LinkedHashMap<String,MethodNode>> cs2 = getClasses(filename2, prefix2);
 
         System.out.println(cs1.size() + " / " + cs2.size());
 
@@ -134,7 +168,7 @@ public class MethodComparator
             System.out.println("CL:ADD: " + s);
         }
 
-        compare(cs1, cs2);
+        compareClasses(cs1, cs2);
 
     }
 }
