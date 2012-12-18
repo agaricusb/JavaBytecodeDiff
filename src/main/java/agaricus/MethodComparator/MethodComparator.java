@@ -50,19 +50,40 @@ public class MethodComparator
 
         return classes;
     }
+
+    /**
+     * Compute asymmetric set difference
+     * @param s1 minuend
+     * @param s2 subtrahend
+     * @param <T>
+     * @return s1 - s2
+     */
+    public static <T> Set<T> setDifference(Set<T> s1, Set<T> s2)
+    {
+        Set<T> diff = new HashSet<T>(s1);
+        diff.removeAll(s2);
+        return diff;
+    }
+
     public static void main(String args[]) throws IOException
     {
-        Map<String,ClassNode> cs1 = getClassNodes("/tmp/minecraft-server-1.4.5.jar", "net/minecraft/server/");
-        Map<String,ClassNode> cs2 = getClassNodes("/tmp/craftbukkit-1.4.5-R0.3-2536.jar", "net/minecraft/server/v1_4_5/");
+        String filename1 = "/tmp/minecraft-server-1.4.5.jar";
+        String filename2 = "/tmp/craftbukkit-1.4.5-R0.3-2536.jar";
+
+        Map<String,ClassNode> cs1 = getClassNodes(filename1, "net/minecraft/server/");
+        Map<String,ClassNode> cs2 = getClassNodes(filename2, "net/minecraft/server/v1_4_5/");
 
         System.out.println(cs1.size() + " / " + cs2.size());
 
-        Set<String> s1 = cs1.keySet();
-        Set<String> s2 = cs2.keySet();
+        Set<String> missing = setDifference(cs1.keySet(), cs2.keySet());
+        if (!missing.isEmpty()) {
+            System.out.println("Missing classes! " + filename1 + " - " + filename2 + " = " + missing);
+            return;
+        }
 
-        s2.removeAll(s1);
+        Set<String> surplus = setDifference(cs2.keySet(), cs1.keySet());
+        System.out.println("Classes added (" + surplus.size() + "): " + surplus);
 
-        System.out.println("missing "+s2);
 
         /*
         for (MethodNode methodNode: (List<MethodNode>)c1.methods) {
