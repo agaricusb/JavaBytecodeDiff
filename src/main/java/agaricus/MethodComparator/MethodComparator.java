@@ -38,7 +38,6 @@ public class MethodComparator
             }
 
             String className = FilenameUtils.getBaseName(path);
-            System.out.println(className);
 
             ClassReader classReader = new ClassReader(jarFile.getInputStream(entry));
             ClassNode classNode = new ClassNode();
@@ -65,6 +64,29 @@ public class MethodComparator
         return diff;
     }
 
+    /**
+     * Compare classes in cs1 with classes in cs2
+     * @param cs1 Set of classes to compare
+     * @param cs2 Set of classes to compare with (extra classes are ignored)
+     */
+    public static void compare(Map<String,ClassNode> cs1, Map<String,ClassNode> cs2)
+    {
+        for (Map.Entry<String, ClassNode> entry1 : cs1.entrySet()) {
+            String className = entry1.getKey();
+            ClassNode class1 = entry1.getValue();
+            ClassNode class2 = cs2.get(className);
+
+            if (class1.methods.size() != class2.methods.size())
+                System.out.println(className + " " + class1.methods.size() + " / " + class2.methods.size());
+
+            /*
+            for (MethodNode methodNode: (List<MethodNode>)class1.methods) {
+                System.out.println("\t "+methodNode.name+" "+methodNode.desc);
+            }
+            */
+        }
+    }
+
     public static void main(String args[]) throws IOException
     {
         String filename1 = "/tmp/minecraft-server-1.4.5.jar";
@@ -84,11 +106,7 @@ public class MethodComparator
         Set<String> surplus = setDifference(cs2.keySet(), cs1.keySet());
         System.out.println("Classes added (" + surplus.size() + "): " + surplus);
 
+        compare(cs1, cs2);
 
-        /*
-        for (MethodNode methodNode: (List<MethodNode>)c1.methods) {
-            System.out.println("\t "+methodNode.name+" "+methodNode.desc);
-        }
-        */
     }
 }
