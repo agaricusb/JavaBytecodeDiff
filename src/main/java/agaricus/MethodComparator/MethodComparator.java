@@ -5,6 +5,8 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.util.ASMifier;
+import org.objectweb.asm.util.Textifier;
 
 import java.io.IOException;
 import java.util.*;
@@ -111,9 +113,23 @@ public class MethodComparator
             // Added/removed methods
             if (!removed.isEmpty() || !added.isEmpty()) {
                 for (String remove: removed) {
-                    System.out.println("MD:REM: " + className + " " + remove);
-                    // TODO: detect signature changes - same name, position, different descriptor? heuristic? if removed try to find..
-                    // Few methods if any methods are actually removed!
+                    String[] a = remove.split(" ");
+                    String removeName = a[0];
+                    String removeSignature = a[1];
+                    boolean changedSignature = false;
+                    for (String add: added) {
+                        String[] b = add.split(" ");
+                        String addName = b[0];
+                        String addSignature = b[1];
+                        if (removeName.equals(addName)) {
+                            // Changed method signature - but same name
+                            System.out.println("MD:SIG: " + className + " " + removeName + " " + removeSignature + " " + addName + " " + addSignature);
+                            changedSignature = true;
+                        }
+                    }
+                    if (!changedSignature) {
+                        System.out.println("MD:REM: " + className + " " + remove);
+                    }
                 }
                 for (String add: added) {
                     System.out.println("MD:ADD: " + className + " " + add);
@@ -125,19 +141,33 @@ public class MethodComparator
                 MethodNode m1 = methods1.get(methodName);
                 MethodNode m2 = methods2.get(methodName);
 
-                compareMethods(className, m1, m2);
+                // TODO: detect changed methods
+                //TODO compareMethods(className, m1, m2);
             }
-
-            // TODO: detect changed methods
-            System.out.println("");
         }
     }
 
     public static void compareMethods(String className, MethodNode m1, MethodNode m2) {
+        ASMifier a1 = new ASMifier();
+        // TODO a1.visit();
+
+
+
         AbstractInsnNode inst1 = m1.instructions.getFirst();
         AbstractInsnNode inst2 = m2.instructions.getFirst();
 
-        System.out.println("MD:???: " + className + " " + m1.name + " = " + inst1.equals(inst2) + " . " + inst1.getType() + "," + inst2.getType() + " ?? " + inst1.hashCode() + "/" + inst2.hashCode());
+        System.out.println("MD:???: " + className + " " + m1.name + " = " + inst1.equals(inst2) + " . " + inst1 + " ? " + inst2);
+    }
+
+    public static boolean compareInstructions(AbstractInsnNode inst1, AbstractInsnNode inst2) {
+        /*
+        switch(inst1.getType()) {
+
+        }
+        */
+
+
+        return false;
     }
 
     public static void main(String[] args) throws IOException
