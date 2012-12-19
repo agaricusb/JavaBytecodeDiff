@@ -1,13 +1,16 @@
 package agaricus.MethodComparator;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.Textifier;
 
+import javax.sql.rowset.Joinable;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
 import java.util.*;
@@ -143,10 +146,13 @@ public class MethodComparator
                 MethodNode m1 = methods1.get(methodName);
                 MethodNode m2 = methods2.get(methodName);
 
-                if (m1.access != m2.access) {
+                // Compare access specifiers
+                // Note: this ignores uncommon access flags
+                String access1 = accessToString(m1.access);
+                String access2 = accessToString(m2.access);
+                if (!access1.equals(access2)) {
                     // Method access change (e.g. private -> public)
-                    // TODO: human-readable?
-                    System.out.println("MD:Acc: " + className + " " + m1.name + " " + m1.desc + " " + m1.access + " " + m2.name + " " + m2.desc + " " + m2.access);
+                    System.out.println("MD:Acc: " + className + " " + m1.name + " " + m1.desc + " " + access1 + " " + m2.name + " " + m2.desc + " " + access2);
                 }
 
                 compareMethods(className, m1, m2);
@@ -154,6 +160,32 @@ public class MethodComparator
 
             // TODO: compare fields, for type and access changes
         }
+    }
+
+    public static String accessToString(int flags) {
+        List<String> flagNames = new ArrayList<String>();
+        if ((flags & Opcodes.ACC_PUBLIC) == Opcodes.ACC_PUBLIC) {
+            flagNames.add("public");
+        }
+        if ((flags & Opcodes.ACC_PRIVATE) == Opcodes.ACC_PRIVATE) {
+            flagNames.add("private");
+        }
+        if ((flags & Opcodes.ACC_PROTECTED) == Opcodes.ACC_PROTECTED) {
+            flagNames.add("protected");
+        }
+        if ((flags & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) {
+            flagNames.add("static");
+        }
+        if ((flags & Opcodes.ACC_FINAL) == Opcodes.ACC_FINAL) {
+            flagNames.add("final");
+        }
+        if ((flags & Opcodes.ACC_SYNCHRONIZED) == Opcodes.ACC_SYNCHRONIZED) {
+            flagNames.add("synchronized");
+        }
+        // see http://websvn.ow2.org/filedetails.php?repname=asm&path=%2Ftrunk%2Fasm%2Fsrc%2Forg%2Fobjectweb%2Fasm%2FOpcodes.java for all
+        // which we don't care about..
+
+        return StringUtils.join(flagNames, ',');
     }
 
     public static void compareMethods(String className, MethodNode m1, MethodNode m2) {
