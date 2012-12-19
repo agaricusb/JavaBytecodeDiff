@@ -130,11 +130,11 @@ public class MethodComparator
                         }
                     }
                     if (!changedSignature) {
-                        System.out.println("MD:REM: " + className + " " + remove);
+                        System.out.println("MD:Rem: " + className + " " + remove);
                     }
                 }
                 for (String add: added) {
-                    System.out.println("MD:ADD: " + className + " " + add);
+                    System.out.println("MD:Add: " + className + " " + add);
                 }
             }
             // TODO: detect access changes - .access bit field (e.g. private -> public)
@@ -154,34 +154,27 @@ public class MethodComparator
 
         boolean differ = false;
 
-        if (m1.instructions == null) {
-            System.out.println("MD:???: " + className + " " + m1.name + " no instructions");
-            return;
-        }
-        if (m2.instructions == null) {
-            System.out.println("MD:???: " + className + " " + m1.name + " first has instructions, but not second");
-            return;
-        }
-
         AbstractInsnNode insn1 = m1.instructions.getFirst();
         AbstractInsnNode insn2 = m2.instructions.getFirst();
 
-        do {
-            System.out.println("MD:???: " + className + " " + m1.name + " = " + insn1.getOpcode() + "," + insn2.getOpcode());
+        while(insn1 != null && insn2 != null) {
+            if (insn1.getOpcode() != insn2.getOpcode()) { // TODO: operands
+                differ = true;
+            }
 
             insn1 = insn1.getNext();
             insn2 = insn2.getNext();
-            if (insn1 == null || insn2 == null)  {
-                break;
-            }
-            if (insn1.getOpcode() != insn2.getOpcode())  // TODO: operands
-                differ = true;
-        } while (true);
+
+        }
         if (insn1 == null && insn2 != null) {
-            System.out.println(" m1 ended first, " + (differ ? " appended" : " changed"));
+            //System.out.println(" m1 ended first, " + (differ ? " appended" : " changed"));
             differ = true;
         }
-        System.out.println(" methods " + (differ ? "DIFFER" : "identical"));
+        if (differ)  {
+            System.out.println("MD:Edt: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
+        } else {
+            //System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
+        }
     }
 
     public static boolean compareInstructions(AbstractInsnNode inst1, AbstractInsnNode inst2) {
