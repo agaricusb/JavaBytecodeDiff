@@ -127,6 +127,7 @@ public class MethodComparator
                             // Changed method signature - but same name
                             System.out.println("MD:SIG: " + className + " " + removeName + " " + removeSignature + " " + addName + " " + addSignature);
                             changedSignature = true;
+                            // TODO: add to methods2 so can compare methods further, even if signature changes
                         }
                     }
                     if (!changedSignature) {
@@ -137,14 +138,21 @@ public class MethodComparator
                     System.out.println("MD:Add: " + className + " " + add);
                 }
             }
-            // TODO: detect access changes - .access bit field (e.g. private -> public)
 
             for (String methodName: setIntersection(methods1.keySet(), methods2.keySet())) {
                 MethodNode m1 = methods1.get(methodName);
                 MethodNode m2 = methods2.get(methodName);
 
+                if (m1.access != m2.access) {
+                    // Method access change (e.g. private -> public)
+                    // TODO: human-readable?
+                    System.out.println("MD:Acc: " + className + " " + m1.name + " " + m1.desc + " " + m1.access + " " + m2.name + " " + m2.desc + " " + m2.access);
+                }
+
                 compareMethods(className, m1, m2);
             }
+
+            // TODO: compare fields, for type and access changes
         }
     }
 
