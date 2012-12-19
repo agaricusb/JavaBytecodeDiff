@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.Textifier;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
 import java.util.*;
 import java.util.jar.JarEntry;
@@ -23,6 +24,7 @@ public class MethodComparator
      * @param packagePrefix Prefix to match for classes to read (all others ignored)
      * @return Map of class name String to ClassNode
      */
+    @SuppressWarnings("unchecked")
     public static LinkedHashMap<String,LinkedHashMap<String, MethodNode>> getClasses(String jarFilename, String packagePrefix) throws IOException
     {
         JarFile jarFile = new JarFile(jarFilename);
@@ -48,7 +50,7 @@ public class MethodComparator
             // Ordered list of methods
             LinkedHashMap<String, MethodNode> methods = new LinkedHashMap<String, MethodNode>();
 
-            for (MethodNode methodNode: (List<MethodNode>)classNode.methods) {
+            for (MethodNode methodNode: (List<MethodNode>)classNode.methods /* unchecked :( */) {
                 // Key on the method name, space, and the descriptor (Java type string, like: ()Z)
                 // Not using methodNode.signature since it seems to always be null
                 String key = methodNode.name + " " + methodNode.desc;
@@ -141,22 +143,45 @@ public class MethodComparator
                 MethodNode m1 = methods1.get(methodName);
                 MethodNode m2 = methods2.get(methodName);
 
-                // TODO: detect changed methods
-                //TODO compareMethods(className, m1, m2);
+                compareMethods(className, m1, m2);
             }
         }
     }
 
     public static void compareMethods(String className, MethodNode m1, MethodNode m2) {
-        ASMifier a1 = new ASMifier();
+        //ASMifier a1 = new ASMifier();
         // TODO a1.visit();
 
+        boolean differ = false;
 
+        if (m1.instructions == null) {
+            System.out.println("MD:???: " + className + " " + m1.name + " no instructions");
+            return;
+        }
+        if (m2.instructions == null) {
+            System.out.println("MD:???: " + className + " " + m1.name + " first has instructions, but not second");
+            return;
+        }
 
-        AbstractInsnNode inst1 = m1.instructions.getFirst();
-        AbstractInsnNode inst2 = m2.instructions.getFirst();
+        AbstractInsnNode insn1 = m1.instructions.getFirst();
+        AbstractInsnNode insn2 = m2.instructions.getFirst();
 
-        System.out.println("MD:???: " + className + " " + m1.name + " = " + inst1.equals(inst2) + " . " + inst1 + " ? " + inst2);
+        do {
+            System.out.println("MD:???: " + className + " " + m1.name + " = " + insn1.getOpcode() + "," + insn2.getOpcode());
+
+            insn1 = insn1.getNext();
+            insn2 = insn2.getNext();
+            if (insn1 == null || insn2 == null)  {
+                break;
+            }
+            if (insn1.getOpcode() != insn2.getOpcode())  // TODO: operands
+                differ = true;
+        } while (true);
+        if (insn1 == null && insn2 != null) {
+            System.out.println(" m1 ended first, " + (differ ? " appended" : " changed"));
+            differ = true;
+        }
+        System.out.println(" methods " + (differ ? "DIFFER" : "identical"));
     }
 
     public static boolean compareInstructions(AbstractInsnNode inst1, AbstractInsnNode inst2) {
