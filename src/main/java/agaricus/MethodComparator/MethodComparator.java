@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifier;
+import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
 import javax.sql.rowset.Joinable;
@@ -48,6 +49,8 @@ public class MethodComparator
             ClassReader classReader = new ClassReader(jarFile.getInputStream(entry));
             ClassNode classNode = new ClassNode();
 
+            //classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
+            //classReader.accept(classNode, ClassReader.SKIP_FRAMES);
             classReader.accept(classNode, 0);
 
             // Ordered list of methods
@@ -233,33 +236,69 @@ public class MethodComparator
         AbstractInsnNode insn2 = m2.instructions.getFirst();
 
         while(insn1 != null && insn2 != null) {
-            if (insn1.getOpcode() != insn2.getOpcode()) { // TODO: operands
+            // Skip frames
+            while(insn1 != null && insn1.getOpcode() == -1) {
+                insn1 = insn1.getNext();
+            }
+            while(insn2 != null && insn2.getOpcode() == -1) {
+                insn2 = insn2.getNext();
+            }
+
+            String o1 = "", o2 = "";
+            if (insn1 != null) {
+                o1 = opcodeToString(insn1.getOpcode());
+            }
+            if (insn2 != null) {
+                o2 = opcodeToString(insn2.getOpcode());
+            }
+
+            // Compare
+            if (!o1.equals(o2)) { // TODO: compare operands
                 differ = true;
             }
-            System.out.println(" " + insn1.getOpcode() + "\t" + insn2.getOpcode() + "\t" + (differ ? " <--" : ""));
+            System.out.println(" " + o1 + "\t" + o2 + "\t" + (differ ? " <--" : ""));
 
-            insn1 = insn1.getNext();
-            insn2 = insn2.getNext();
+            if (insn1 != null) {
+                insn1 = insn1.getNext();
+            }
 
+            if (insn2 != null) {
+                insn2 = insn2.getNext();
+            }
         }
+
+        // Skip frames
+        while(insn1 != null && insn1.getOpcode() == -1) {
+            insn1 = insn1.getNext();
+        }
+        while(insn2 != null && insn2.getOpcode() == -1) {
+            insn2 = insn2.getNext();
+        }
+
+
         while(insn1 != null) {
-            System.out.println(" " + insn1.getOpcode() + "\t---\t");
+            System.out.println(" " + opcodeToString(insn1.getOpcode()) + "\t---\t");
             insn1 = insn1.getNext();
-        }
-        while(insn2 != null) {
-            System.out.println(" ---\t" + insn2.getOpcode() + "\t");
-            insn2 = insn2.getNext();
-        }
-
-        if (insn1 == null && insn2 != null) {
-            //System.out.println(" m1 ended first, " + (differ ? " appended" : " changed"));
             differ = true;
         }
+        while(insn2 != null) {
+            System.out.println(" ---\t" + opcodeToString(insn2.getOpcode()) + "\t");
+            insn2 = insn2.getNext();
+            differ = true;
+        }
+
         if (differ)  {
             System.out.println("MD:Edt: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         } else {
             System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         }
+    }
+
+    public static String opcodeToString(int op) {
+        if (op == -1) {
+            return "";
+        }
+        return Printer.OPCODES[op];
     }
 
     public static boolean compareInstructions(AbstractInsnNode inst1, AbstractInsnNode inst2) {
