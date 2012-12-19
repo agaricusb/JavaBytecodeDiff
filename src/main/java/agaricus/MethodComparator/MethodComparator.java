@@ -235,6 +235,8 @@ public class MethodComparator
         AbstractInsnNode insn1 = m1.instructions.getFirst();
         AbstractInsnNode insn2 = m2.instructions.getFirst();
 
+        // TODO: perform full assembly
+
         while(insn1 != null && insn2 != null) {
             // Skip frames
             while(insn1 != null && insn1.getOpcode() == -1) {
@@ -256,7 +258,7 @@ public class MethodComparator
             if (!o1.equals(o2)) { // TODO: compare operands
                 differ = true;
             }
-            System.out.println(" " + o1 + "\t" + o2 + "\t" + (differ ? " <--" : ""));
+            //System.out.println(" " + o1 + "\t" + o2 + "\t" + (differ ? " <--" : ""));
 
             if (insn1 != null) {
                 insn1 = insn1.getNext();
@@ -277,12 +279,12 @@ public class MethodComparator
 
 
         while(insn1 != null) {
-            System.out.println(" " + opcodeToString(insn1.getOpcode()) + "\t---\t");
+            //System.out.println(" " + opcodeToString(insn1.getOpcode()) + "\t---\t");
             insn1 = insn1.getNext();
             differ = true;
         }
         while(insn2 != null) {
-            System.out.println(" ---\t" + opcodeToString(insn2.getOpcode()) + "\t");
+            //System.out.println(" ---\t" + opcodeToString(insn2.getOpcode()) + "\t");
             insn2 = insn2.getNext();
             differ = true;
         }
@@ -290,7 +292,7 @@ public class MethodComparator
         if (differ)  {
             System.out.println("MD:Edt: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         } else {
-            System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
+            //System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         }
     }
 
