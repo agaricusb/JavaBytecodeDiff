@@ -236,11 +236,21 @@ public class MethodComparator
             if (insn1.getOpcode() != insn2.getOpcode()) { // TODO: operands
                 differ = true;
             }
+            System.out.println(" " + insn1.getOpcode() + "\t" + insn2.getOpcode() + "\t" + (differ ? " <--" : ""));
 
             insn1 = insn1.getNext();
             insn2 = insn2.getNext();
 
         }
+        while(insn1 != null) {
+            System.out.println(" " + insn1.getOpcode() + "\t---\t");
+            insn1 = insn1.getNext();
+        }
+        while(insn2 != null) {
+            System.out.println(" ---\t" + insn2.getOpcode() + "\t");
+            insn2 = insn2.getNext();
+        }
+
         if (insn1 == null && insn2 != null) {
             //System.out.println(" m1 ended first, " + (differ ? " appended" : " changed"));
             differ = true;
@@ -248,7 +258,7 @@ public class MethodComparator
         if (differ)  {
             System.out.println("MD:Edt: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         } else {
-            //System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
+            System.out.println("MD:Sam: " + className + " " + m1.name + " " + m1.desc + " " + m2.name + " " + m2.desc);
         }
     }
 
