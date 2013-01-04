@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>agaricus.MethodComparator</groupId>
-  <artifactId>MethodComparator</artifactId>
+  <groupId>agaricus.JavaBytecodeDiff</groupId>
+  <artifactId>JavaBytecodeDiff</artifactId>
   <packaging>jar</packaging>
   <version>1.0</version>
-  <name>MethodComparator</name>
+  <name>JavaBytecodeDiff</name>
   <url>http://www.bukkit.org</url>
 
   <properties>
@@ -13,9 +13,9 @@
   </properties>
 
   <scm>
-    <connection>scm:git:git://github.com/agaricusb/MethodComparator.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/agaricusb/MethodComparator.git</developerConnection>
-    <url>https://github.com/agaricusb/MethodComparator</url>
+    <connection>scm:git:git://github.com/agaricusb/JavaBytecodeDiff.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/agaricusb/JavaBytecodeDiff.git</developerConnection>
+    <url>https://github.com/agaricusb/JavaBytecodeDiff</url>
   </scm>
 
   <dependencies>
@@ -52,7 +52,7 @@
         <artifactId>gitdescribe-maven-plugin</artifactId>
         <version>1.3</version>
         <configuration>
-          <outputPrefix>git-MethodComparator-</outputPrefix>
+          <outputPrefix>git-JavaBytecodeDiff-</outputPrefix>
           <outputPostfix></outputPostfix>
         </configuration>
         <executions>
@@ -71,8 +71,8 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Main-Class>agaricus.MethodComparator.MethodComparator</Main-Class>
-              <Implementation-Title>MethodComparator</Implementation-Title>
+              <Main-Class>agaricus.JavaBytecodeDiff.JavaBytecodeDiff</Main-Class>
+              <Implementation-Title>JavaBytecodeDiff</Implementation-Title>
               <Implementation-Version>${describe}</Implementation-Version>
               <Sealed>true</Sealed>
             </manifestEntries>

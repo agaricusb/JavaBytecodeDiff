@@ -1,4 +1,4 @@
-package agaricus.MethodComparator;
+package agaricus.JavaBytecodeDiff;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -20,7 +20,7 @@ import java.util.jar.JarFile;
 
 //import org.objectweb.asm.*;
 
-public class MethodComparator
+public class JavaBytecodeDiff
 {
     /**
      * Read classes in a jar file into ASM ClassNodes
