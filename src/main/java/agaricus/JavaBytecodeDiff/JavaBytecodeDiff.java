@@ -316,11 +316,19 @@ public class JavaBytecodeDiff
 
     public static void main(String[] args) throws IOException
     {
-        String filename1 = "/tmp/minecraft-server-1.4.5.jar";
-        String filename2 = "/tmp/craftbukkit-1.4.5-R0.3-2536.jar";
+        if (args.length != 4) {
+            System.out.println("usage: java -jar JavaBytecodeDiff.jar jar1 jar2 prefix1 prefix2");
+            System.out.println("Example:\n");
+            System.out.println("\tjava -jar JavaBytecodeDiff.jar ../jars/minecraft-server-1.4.6.jar ../jars/craftbukkit-1.4.6-R0.3.jar net/minecraft/server net/minecraft/server/v1_4_6");
+            System.exit(-1);
+        }
 
-        String prefix1 = "net/minecraft/server/";
-        String prefix2 = "net/minecraft/server/v1_4_5/";
+        // TODO: flags
+        String filename1 = args[0];
+        String filename2 = args[1];
+
+        String prefix1 = args[2];
+        String prefix2 = args[3];
 
         LinkedHashMap<String,LinkedHashMap<String,MethodNode>> cs1 = getClasses(filename1, prefix1);
         LinkedHashMap<String,LinkedHashMap<String,MethodNode>> cs2 = getClasses(filename2, prefix2);
